@@ -137,3 +137,5 @@ kalama:/ # cat result.txt
 The source code is (c) Qualcomm Technologies Inc. and is distributed under the terms of The Clear BSD License (LICENSE.TXT).
 
 Code examples taken from Intel ISPC project are (c) Intel Corporation and are subject to the license in LICENSE-ISPC.TXT.
+
+Code derived from the KleidiAI project is (c) Arm Limited and/or its affiliates and is subject to the license in LICENSE-KLEIDIAI.TXT.
