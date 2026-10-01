@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <ripple_math.h>
 #include <string>
 #include <vector>
@@ -40,6 +41,7 @@ public:
 
 protected:
   double randn() const;
+  float randnFullRangef() const;
 
   TestFramework &m_TestFramework;
 };
@@ -190,6 +192,14 @@ public:
 };
 
 inline double Test::randn() const { return F().random(); }
+
+inline float Test::randnFullRangef() const {
+  const double lowest =
+      static_cast<double>(std::numeric_limits<float>::lowest());
+  const double max = static_cast<double>(std::numeric_limits<float>::max());
+  const double range = max - lowest;
+  return static_cast<float>(lowest + range * F().random());
+}
 
 // TODO: Investigate why templates don't work.
 #if defined __x86_64__
