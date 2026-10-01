@@ -46,18 +46,14 @@ __arm_new("za") __arm_locally_streaming void gemm_f32_ripple_sme_mopa(
 
   for (size_t m = 0; m < M; m += BLOCK_LEN) {
     for (size_t n = 0; n < N; n += BLOCK_LEN) {
-      // Index calculation.
-      size_t Mblock = m / BLOCK_LEN;
-      size_t LHS_BeginIdx = (Mblock * K * BLOCK_LEN);
-      size_t Nblock = n / BLOCK_LEN;
-      // Add one for the packed bias.
-      size_t RHS_BeginIdx = (Nblock * (K + 1) * BLOCK_LEN);
+      // Index calculation. For RHS we add 1 for the packed bias.
+      size_t LHS_BeginIdx = (m * K);
+      size_t RHS_BeginIdx = (n * (K + 1));
 
       // Zero the tiles and add bias.
       zeroAccumulator_i32(TileShape);
       // 1.0f x Bias to fill the full tile.
-      float One = ripple_broadcast(VecShape, /*dim*/ 0b01, 1.0f);
-      outerProductAccumulate_f32(One, RHS[RHS_BeginIdx + InVecIdx]);
+      outerProductAccumulate_f32(1.0f, RHS[RHS_BeginIdx + InVecIdx]);
       RHS_BeginIdx += BLOCK_LEN;
 
       for (size_t k = 0; k < K; ++k) {
