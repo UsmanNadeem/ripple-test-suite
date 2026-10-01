@@ -17,7 +17,7 @@
 #pragma once
 #include <cstddef>
 
-__arm_new("za") __arm_locally_streaming void gemm_f32_ripple_sme_mopa(
+__arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mopa(
     size_t M, size_t N, size_t K, const void *lhs_packed,
     const void *rhs_packed, void *dst, size_t dst_stride_row,
     size_t dst_stride_col, float CLAMP_MIN, float CLAMP_MAX);
