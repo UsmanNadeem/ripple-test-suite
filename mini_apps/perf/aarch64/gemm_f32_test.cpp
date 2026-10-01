@@ -14,10 +14,10 @@
 #include <ripple_sme_veclib.h>
 
 // KleidiAI headers
-#include "gemm_f32_ripple_sme_mopa.h"
 #include "kai/ukernels/matmul/matmul_clamp_f32_f32p_f32p/kai_matmul_clamp_f32_f32p2vlx1_f32p2vlx1b_2vlx2vl_sme_mopa.h"
 #include "kai/ukernels/matmul/pack/kai_lhs_pack_f32p2vlx1_f32_sme.h"
 #include "kai/ukernels/matmul/pack/kai_rhs_pack_kxn_f32p2vlx1biasf32_f32_f32_sme.h"
+#include "ripple_matmul_f32_f32p_f32p_sme_mopa.h"
 
 /// Wrappers for the actual functions.
 namespace {
@@ -35,10 +35,10 @@ void gemm_f32_ref(size_t M, size_t N, size_t K, const float *lhs_packed,
 void gemm_f32_ripple(size_t M, size_t N, size_t K, const float *lhs_packed,
                      const float *rhs_packed, float *result, float clamp_min,
                      float clamp_max) {
-  gemm_f32_ripple_sme_mopa(M, N, K, lhs_packed, rhs_packed, result,
-                           N * sizeof(float), // dst_stride_row
-                           sizeof(float),     // dst_stride_col
-                           clamp_min, clamp_max);
+  ripple_matmul_f32_f32p_f32p_sme_mopa(M, N, K, lhs_packed, rhs_packed, result,
+                                       N * sizeof(float), // dst_stride_row
+                                       sizeof(float),     // dst_stride_col
+                                       clamp_min, clamp_max);
 }
 
 } // namespace

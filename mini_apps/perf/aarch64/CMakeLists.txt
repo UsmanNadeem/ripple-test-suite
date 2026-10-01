@@ -53,7 +53,7 @@ if(HAVE_RIPPLE_SME_VECLIB)
 
   # Ripple source files
   set(RIPPLE_GEMM_SOURCES
-    gemm_f32_ripple_sme_mopa.cpp
+    ripple_matmul_f32_f32p_f32p_sme_mopa.cpp
     gemm_f32_test.cpp
   )
 
