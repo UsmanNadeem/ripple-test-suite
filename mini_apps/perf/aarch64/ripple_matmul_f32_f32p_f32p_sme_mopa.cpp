@@ -25,12 +25,15 @@
 #define VEC_ELEMS (SVE_BYTES / sizeof(float))
 #define BLOCK_LEN (VEC_ELEMS * 2)
 
-/// Ripple implementationx. Assuming VL == 512bits.
-/// We use Ripple vector library implemented in ripple_sme_veclib.h, these
-/// expand to vectorized implementations according to the block size specified
-/// by ripple_set_block_shape(). Functions include: zeroAccumulator_f32,
-/// outerProductAccumulate_f32, and getAccumHorizSlice_f32. See the header,
-/// https://qualcomm.github.io/learn-ripple/, and inline comments below for more
+/// Ripple based implementation of F32 matmul using SME.
+/// We use Ripple vector library implemented in ripple_sme_veclib.h, functions
+/// include: zeroAccumulator_f32, outerProductAccumulate_f32, and
+/// getAccumHorizSlice_f32. These functions expand to vectorized implementations
+/// that work on the SME storage. The block sizes in our implementation are
+/// fixed (as opposed to scalable), and are set using calls to
+/// ripple_set_block_shape(). We assume that VL == 512bits. See the header
+/// <ripple_sme_veclib.h> for implementation details and the interface, and
+/// https://qualcomm.github.io/learn-ripple/ and inline comments below for more
 /// details.
 __arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mopa(
     size_t M, size_t N, size_t K, const void *lhs_packed,
@@ -50,7 +53,7 @@ __arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mop
                                                    /*size dim 0*/ BLOCK_LEN);
 
   // ripple_id gives a vector index for the shape.
-  size_t InVecIdx = ripple_id(VecShape, /*dimension*/ 0);
+  size_t VecIdx = ripple_id(VecShape, /*dimension*/ 0);
 
   for (size_t m = 0; m < M; m += BLOCK_LEN) {
     for (size_t n = 0; n < N; n += BLOCK_LEN) {
@@ -62,15 +65,15 @@ __arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mop
       zeroAccumulator_f32(TileShape);
       // Prefill the tiles with bias.
       // outerproduct(1.0f, Bias) fills the full tile with bias.
-      outerProductAccumulate_f32(1.0f, RHS[RHS_BeginIdx + InVecIdx]);
+      outerProductAccumulate_f32(1.0f, RHS[RHS_BeginIdx + VecIdx]);
       // Rest of the k values in the packed array are RHS data values.
       RHS_BeginIdx += BLOCK_LEN;
 
       for (size_t k = 0; k < K; ++k) {
         // Flattened LHS transposed blocks of BLOCK_LEN x K.
         // Flattened RHS.
-        float LHS_Vec = LHS[LHS_BeginIdx + (k * BLOCK_LEN) + InVecIdx];
-        float RHS_Vec = RHS[RHS_BeginIdx + (k * BLOCK_LEN) + InVecIdx];
+        float LHS_Vec = LHS[LHS_BeginIdx + (k * BLOCK_LEN) + VecIdx];
+        float RHS_Vec = RHS[RHS_BeginIdx + (k * BLOCK_LEN) + VecIdx];
         outerProductAccumulate_f32(LHS_Vec, RHS_Vec);
       }
 
@@ -79,12 +82,12 @@ __arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mop
            ++m_slice) {
         size_t DST_RowIdx = (m + m_slice) * dst_stride_row;
         // Masking along N dimension.
-        if (n + InVecIdx < N) {
+        if (n + VecIdx < N) {
           // This gives us a block of rows at a specific index in the tile.
           float T = getAccumHorizSlice_f32(TileShape, m_slice);
           T = __builtin_elementwise_maximum(
               CLAMP_MIN, __builtin_elementwise_minimum(CLAMP_MAX, T));
-          DST[DST_RowIdx + n + InVecIdx] = T;
+          DST[DST_RowIdx + n + VecIdx] = T;
         }
       }
     }

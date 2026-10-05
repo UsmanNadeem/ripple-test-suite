@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cassert>
+#include <limits>
 #include <ripple-test-suite/ripple-test-suite.h>
 #include <ripple.h>
 #include <ripple_sme_veclib.h>
@@ -53,10 +54,13 @@ class GemmF32Test : public Test {
   float clamp_min, clamp_max;
 
 public:
+  std::pair<bool, std::string> xfail() const override {
+    return {!verify_ripple_sme_api_fixed_vscale(),
+            "Runtime VL different than Ripple's fixed assumption."};
+  }
+
   GemmF32Test(TestFramework &TestFramework) : Test(TestFramework) {
     srand(time(0));
-    assert(verify_ripple_sme_api_fixed_vscale() &&
-           "Runtime VL different than Ripple's fixed assumption.");
     // Kernel parameters
     const size_t mr =
         kai_get_mr_matmul_clamp_f32_f32p2vlx1_f32p2vlx1b_2vlx2vl_sme_mopa();
@@ -85,13 +89,21 @@ public:
     std::vector<float> rhs_unpacked(K * N);
     std::vector<float> bias(N);
 
+    auto randF = [&]() -> float {
+      const double lowest =
+          static_cast<double>(std::numeric_limits<float>::lowest());
+      const double max = static_cast<double>(std::numeric_limits<float>::max());
+      const double range = max - lowest;
+      return static_cast<float>(lowest + range * F().random());
+    };
+
     // Initialize unpacked matrices with random data.
     for (size_t i = 0; i < M * K; ++i)
-      lhs_unpacked[i] = randnFullRangef();
+      lhs_unpacked[i] = randF();
     for (size_t i = 0; i < K * N; ++i)
-      rhs_unpacked[i] = randnFullRangef();
+      rhs_unpacked[i] = randF();
     for (size_t i = 0; i < N; ++i)
-      bias[i] = randnFullRangef();
+      bias[i] = randF();
 
     // Pack using KleidiAI functions.
     kai_run_lhs_pack_f32p2vlx1_f32_sme(M, K, mr, kr, sr,
@@ -105,8 +117,8 @@ public:
         /*extra_bytes=*/0,
         /*params=*/nullptr);
 
-    float val1 = randnFullRangef();
-    float val2 = randnFullRangef();
+    float val1 = randF();
+    float val2 = randF();
     clamp_min = std::min(val1, val2);
     clamp_max = std::max(val1, val2);
 
