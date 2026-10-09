@@ -108,8 +108,8 @@ __arm_new("za") __arm_locally_streaming void ripple_matmul_i8_i8p_i8p_sme_mopa(
           int32_t IntRes = getAccumHorizSlice_i32(TileShape, m_slice);
           IntRes = __builtin_elementwise_roundeven(float(IntRes) * Scale +
                                                    float(ZeroPoint));
-          IntRes = __builtin_elementwise_max(
-              CLAMP_MIN, __builtin_elementwise_min(CLAMP_MAX, IntRes));
+          IntRes = __builtin_elementwise_min(
+              __builtin_elementwise_max(IntRes, CLAMP_MIN), CLAMP_MAX);
           DST[DST_RowIdx + (n + VecIdxI32)] = IntRes;
         }
       }
