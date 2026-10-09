@@ -85,8 +85,8 @@ __arm_new("za") __arm_locally_streaming void ripple_matmul_f32_f32p_f32p_sme_mop
         if (n + VecIdx < N) {
           // This gives us a block of rows at a specific index in the tile.
           float T = getAccumHorizSlice_f32(TileShape, m_slice);
-          T = __builtin_elementwise_maximum(
-              CLAMP_MIN, __builtin_elementwise_minimum(CLAMP_MAX, T));
+          T = __builtin_elementwise_minimum(
+              __builtin_elementwise_maximum(T, CLAMP_MIN), CLAMP_MAX);
           DST[DST_RowIdx + n + VecIdx] = T;
         }
       }
