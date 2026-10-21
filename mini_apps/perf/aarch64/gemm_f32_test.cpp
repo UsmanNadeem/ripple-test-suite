@@ -59,7 +59,9 @@ public:
             "Runtime VL different than Ripple's fixed assumption."};
   }
 
-  GemmF32Test(TestFramework &TestFramework) : Test(TestFramework) {
+  GemmF32Test(TestFramework &TestFramework) : Test(TestFramework) {}
+
+  void prepare(unsigned) override {
     srand(time(0));
     // Kernel parameters
     const size_t mr =

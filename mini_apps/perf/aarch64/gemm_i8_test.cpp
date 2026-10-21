@@ -68,7 +68,9 @@ public:
             "Runtime VL different than Ripple's fixed assumption."};
   }
 
-  GemmI8Test(TestFramework &TestFramework) : Test(TestFramework) {
+  GemmI8Test(TestFramework &TestFramework) : Test(TestFramework) {}
+
+  void prepare(unsigned) override {
     srand(time(0));
     // Kernel parameters
     const size_t mr =
