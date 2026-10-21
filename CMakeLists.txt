@@ -4,6 +4,11 @@ project(ripple-test-suite CXX)
 
 set(RIPPLE_TEST_SUITE_LAST_TEST_APP "")
 
+# The AArch64 SME tests use a fixed streaming vector length. CI can override
+# this for the QEMU version it runs with.
+set(RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES 64 CACHE STRING
+    "Streaming SME vector length in bytes for AArch64 tests")
+
 # Detect the target processor. We cannot rely on the compiler/toolchain because one compiler can
 # generate output for multiple targets e.g. by setting `--target=` in clang options.
 # We use the C++ compiler. While it is possible to configure different compilers for different
@@ -29,6 +34,11 @@ else()
 endif()
 
 MESSAGE(STATUS "Detected target: ${BUILD_TARGET}")
+
+if(${BUILD_TARGET} STREQUAL "AArch64")
+  add_compile_definitions(
+    RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES=${RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES})
+endif()
 
 if(NOT ${BUILD_TARGET} STREQUAL "Hexagon" AND ${CMAKE_SYSTEM_NAME} STREQUAL "HexagonStandalone")
   MESSAGE(FATAL_ERROR "CMAKE_SYSTEM_NAME is 'HexagonStandalone' but BUILD_TARGET is not 'hexagon'"

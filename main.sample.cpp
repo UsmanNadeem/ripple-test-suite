@@ -13,6 +13,18 @@
 #include <iostream>
 #include <string>
 
+#if defined(__aarch64__) && defined(__linux__)
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
+
+#ifndef RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES
+#define RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES 64
+#endif
+#endif
+
 #ifdef __hexagon__
 #ifdef HEXAGON_STANDALONE
 #include <hexagon_standalone.h>
@@ -26,6 +38,22 @@ namespace {
 __attribute__((always_inline)) unsigned long long cycles() {
   return __builtin_readcyclecounter();
 }
+
+#if defined(__aarch64__) && defined(__linux__)
+void setStreamingVectorLength() {
+  constexpr unsigned long StreamingVectorLength =
+      RIPPLE_TEST_SUITE_SME_VECTOR_LENGTH_BYTES;
+  const long Result = prctl(PR_SME_SET_VL, StreamingVectorLength, 0, 0, 0);
+  if (Result < 0 ||
+      (Result & PR_SME_VL_LEN_MASK) != StreamingVectorLength) {
+    std::fprintf(stderr,
+                 "Unable to set the SME streaming vector length to %lu bytes: "
+                 "result=%ld, errno=%d\n",
+                 StreamingVectorLength, Result, errno);
+    std::exit(EXIT_FAILURE);
+  }
+}
+#endif
 
 #ifdef __hexagon__
 #ifdef HEXAGON_STANDALONE
@@ -218,6 +246,9 @@ int TestSuite::run() {
 } // namespace ripple_test_suite
 
 int main(int argc, char *argv[]) {
+#if defined(__aarch64__) && defined(__linux__)
+  setStreamingVectorLength();
+#endif
   ripple_test_suite::TestSuite &Suite =
       ripple_test_suite::TestSuite::GetInstance();
   Suite.init(argc, argv);
